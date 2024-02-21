@@ -1,0 +1,13 @@
+{
+	"geode": "v2.0.0",
+	"gd": {
+		"win": "2.204",
+		"android": "2.205",
+		"mac": "2.200"
+	},
+	"version": "v1.0.0",
+	"id": "thegoldgames.noonlineleveldelete",
+	"name": "NoOnlineLevelDelete",
+	"developer": "TheGoldGames",
+	"description": "Hides the button to delete your online levels to prevent accidents."
+}
