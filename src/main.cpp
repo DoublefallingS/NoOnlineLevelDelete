@@ -23,18 +23,17 @@ class $modify(LevelInfoLayer) {
             return false;
         }
         auto DeleteButton2 = RightSideMenu->getChildByIDRecursive("delete-button"); // 2nd delete-button, moderator button
-        auto Sprite = DeleteButton2->getChildByTag(1)
         auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                auto SpriteTexture = Sprite->getTexture()
-                if (SpriteTexture == "GJ_deleteServerBtn_001.png") {
+                auto Position = DeleteButton2->getPosition();
+                if (Position == (23, 28.75)) {
                     RightSideMenu->removeChild(DeleteButton2);
                     RightSideMenu->updateLayout();
                 }
             }
         }
-		return true;
+        return true;
 	}
 };
