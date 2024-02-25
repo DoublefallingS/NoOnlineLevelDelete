@@ -27,7 +27,7 @@ class $modify(LevelInfoLayer) {
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                RightSideMenu->removeChildByTag(5);
+                RightSideMenu->removeChild(DeleteButton2);
                 RightSideMenu->updateLayout();
             }
         }
