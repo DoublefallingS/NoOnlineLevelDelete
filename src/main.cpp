@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/cocos/sprite_nodes/CCSprite.h>
+#include <Geode/binding/CCMenuItemSpriteExtra.hpp>
 using namespace geode::prelude;
 
 class $modify(LevelInfoLayer) {
@@ -27,12 +28,9 @@ class $modify(LevelInfoLayer) {
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                auto Sprite = DeleteButton2->getChildByTag(1)
-                auto Texture = Sprite->getTexture()
-                if (Texture = "GJ_deleteServerBtn_001.png"); {
-                    RightSideMenu->removeChild(DeleteButton2);
-                    RightSideMenu->updateLayout();
-                }
+                RightSideMenu->setID("normal-delete-button");
+                RightSideMenu->removeChildByID("delete-button")
+                RightSideMenu->updateLayout();
             }
         }
         return true;
