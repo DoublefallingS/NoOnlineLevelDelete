@@ -23,10 +23,11 @@ class $modify(LevelInfoLayer) {
         if (!RightSideMenu) {
             return false;
         }
+        auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
         auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
         if (value == true) {
         } else {
-            RightSideMenu->setID("normal-delete-button");
+            DeleteButton2->setID("normal-delete-button");
             RightSideMenu->removeChildByID("delete-button");
             RightSideMenu->updateLayout();
         }
