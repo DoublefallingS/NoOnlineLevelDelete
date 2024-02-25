@@ -27,8 +27,9 @@ class $modify(LevelInfoLayer) {
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                auto PositionY = DeleteButton2->getPositionY();
-                if (PositionY = 28.75); {
+                auto Sprite = DeleteButton2->getChildByTag(1)
+                auto Texture = Sprite->getTexture()
+                if (Texture = "GJ_deleteServerBtn_001.png"); {
                     RightSideMenu->removeChild(DeleteButton2);
                     RightSideMenu->updateLayout();
                 }
