@@ -22,14 +22,17 @@ class $modify(LevelInfoLayer) {
         if (!RightSideMenu) {
             return false;
         }
-        int DeleteButtonTag = 5;
-        auto DeleteButton2 = RightSideMenu->getChildByTag(DeleteButtonTag); // 2nd delete-button, moderator button
+        auto DeleteButton2 = RightSideMenu->getChildByTag("delete-button"); // 2nd delete-button, moderator button
+        auto Sprite = DeleteButton2->getChildByTag(1)
+        auto SpriteTexture = Sprite->getTexture()
         auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                RightSideMenu->removeChild(DeleteButton2);
-                RightSideMenu->updateLayout();
+                if SpriteTexture == "GJ_deleteServerBtn_001.png" {
+                    RightSideMenu->removeChild(DeleteButton2);
+                    RightSideMenu->updateLayout();
+                }
             }
         }
 		return true;
