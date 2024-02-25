@@ -5,30 +5,29 @@ using namespace geode::prelude;
 class $modify(LevelInfoLayer) {
 	bool init(GJGameLevel* v, bool v2) {
 		if (!LevelInfoLayer::init(v, v2)) return false;
-
-		auto DeleteMenu = this->getChildByID("left-side-menu");
-        if (!DeleteMenu) {
+		auto LeftSideMenu = this->getChildByID("left-side-menu");
+        if (!LeftSideMenu) {
             return false;
         }
-		auto DeleteButton = DeleteMenu->getChildByID("delete-button");
+		auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
         if (!DeleteButton) {
         } else {
-            DeleteMenu->removeChild(DeleteButton);
-            DeleteMenu->updateLayout();
+            LeftSideMenu->removeChild(DeleteButton);
+            LeftSideMenu->updateLayout();
         }
 
         // Right side delete-button (for moderators or FakeModerator mod)
+        auto RightSideMenu = this->getChildByID("right-side-menu");
+        if (!RightSideMenu) {
+            return false;
+        }
+		auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
         auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
         if (value == true) {
-            auto DeleteMenu2 = this->getChildByID("right-side-menu");
-            if (!DeleteMenu2) {
-                return false;
-            }
-		    auto DeleteButton2 = DeleteMenu2->getChildByID("delete-button");
             if (!DeleteButton2) {
             } else {
-                DeleteMenu2->removeChild(DeleteButton2);
-                DeleteMenu2->updateLayout();
+                RightSideMenu->removeChild(DeleteButton2);
+                RightSideMenu->updateLayout();
             }
         }
 		return true;
