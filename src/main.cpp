@@ -27,8 +27,8 @@ class $modify(LevelInfoLayer) {
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                auto Position = DeleteButton2->getPositionY();
-                if Position == 28.75 {
+                auto PositionY = DeleteButton2->getPositionY();
+                if (PositionY = 28.75); {
                     RightSideMenu->removeChild(DeleteButton2);
                     RightSideMenu->updateLayout();
                 }
