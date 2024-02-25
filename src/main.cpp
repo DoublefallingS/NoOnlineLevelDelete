@@ -28,12 +28,11 @@ class $modify(LevelInfoLayer) {
         if (value == true) {
             if (!DeleteButton2) {
             } else {
-                auto SpriteTexture = Sprite->getTexture("GJ_deleteServerBtn_001.png")
-                if (!SpriteTexture) {
-                    return false;
+                auto SpriteTexture = Sprite->getTexture()
+                if (SpriteTexture == "GJ_deleteServerBtn_001.png") {
+                    RightSideMenu->removeChild(DeleteButton2);
+                    RightSideMenu->updateLayout();
                 }
-                RightSideMenu->removeChild(DeleteButton2);
-                RightSideMenu->updateLayout();
             }
         }
 		return true;
