@@ -5,11 +5,12 @@
 		"android": "2.205",
 		"mac": "2.200"
 	},
-	"version": "v1.0.2",
+	"version": "v1.0.3",
 	"id": "doublefallings.noonlineleveldelete",
 	"name": "NoOnlineLevelDelete",
 	"developer": "DoubleFallingS",
 	"description": "Hides the button to delete your online levels to prevent accidents.",
+	"repository": "https://github.com/DoubleFallingS/NoOnlineLevelDelete"
 	"settings": {
         "moderator-button-disabled": {
             "name": "Mod Button Disabled",
