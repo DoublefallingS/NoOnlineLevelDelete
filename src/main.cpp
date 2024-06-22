@@ -12,27 +12,30 @@ class $modify(LevelInfoLayer) {
             return false;
         }
 
-        // Right side delete-button (for moderators or FakeModerator mod)
-        auto RightSideMenu = this->getChildByID("right-side-menu");
-        if (!RightSideMenu) {
-            return false;
-        }
-
         auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
-        auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
-
         if (!DeleteButton) {
         } else {
             LeftSideMenu->removeChild(DeleteButton);
             LeftSideMenu->updateLayout();
         }
 
+        // Right side delete-button (for moderators or FakeModerator mod)
+        auto RightSideMenu = this->getChildByID("right-side-menu");
+        if (!RightSideMenu) {
+            return false;
+        }
+
+        auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
         if (!DeleteButton2) {
         } else {
             DeleteButton2->setID("normal-delete-button"); //Both delete buttons have the same name
-            RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
-            DeleteButton2->setID("delete-button"); //Rename the top right delete button back
-            RightSideMenu->updateLayout();
+            if (!RightSideMenu->getChildByID("delete-button");) {
+                DeleteButton2->setID("delete-button");
+            } else {
+                RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
+                DeleteButton2->setID("delete-button"); //Rename the top right delete button back
+                RightSideMenu->updateLayout();
+            }
         }
 	}
 };
