@@ -11,26 +11,28 @@ class $modify(LevelInfoLayer) {
         if (!LeftSideMenu) {
             return false;
         }
-		auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
-        if (!DeleteButton) {
-        } else {
-            LeftSideMenu->removeChild(DeleteButton);
-            LeftSideMenu->updateLayout();
-        }
 
         // Right side delete-button (for moderators or FakeModerator mod)
         auto RightSideMenu = this->getChildByID("right-side-menu");
         if (!RightSideMenu) {
             return false;
         }
+
+        auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
         auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
-        auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
-        if (value == true) {
+
+        if (!DeleteButton) {
+        } else {
+            LeftSideMenu->removeChild(DeleteButton);
+            LeftSideMenu->updateLayout();
+        }
+
+        if (!DeleteButton2) {
+        } else {
             DeleteButton2->setID("normal-delete-button"); //Both delete buttons have the same name
             RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
             DeleteButton2->setID("delete-button"); //Rename the top right delete button back
             RightSideMenu->updateLayout();
         }
-        return true;
 	}
 };
