@@ -29,8 +29,10 @@ class $modify(LevelInfoLayer) {
         if (!DeleteButton2) {
         } else {
             DeleteButton2->setID("normal-delete-button"); //Both delete buttons have the same name
-            if (!RightSideMenu->getChildByID("delete-button");) {
+            auto DeleteButton3 = RightSideMenu->getChildByID("delete-button");
+            if (!DeleteButton3) {
                 DeleteButton2->setID("delete-button");
+                RightSideMenu->updateLayout();
             } else {
                 RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
                 DeleteButton2->setID("delete-button"); //Rename the top right delete button back
