@@ -10,5 +10,13 @@
 	"name": "NoOnlineLevelDelete",
 	"developer": "DoublefallingS",
 	"description": "Hides the button to delete your online levels to prevent accidents.",
-	"repository": "https://github.com/DoublefallingS/NoOnlineLevelDelete"
+	"repository": "https://github.com/DoublefallingS/NoOnlineLevelDelete",
+	"settings": {
+        "moderator-button-disabled": {
+            "name": "Mod Button Disabled",
+            "description": "Whether or not the delete button for moderators should be disabled.",
+            "type": "bool",
+            "default": true
+    	}
+	}
 }
