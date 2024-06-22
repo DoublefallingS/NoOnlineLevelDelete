@@ -11,8 +11,7 @@ class $modify(LevelInfoLayer) {
         if (!LeftSideMenu) {
             return false;
         }
-
-        auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
+		auto DeleteButton = LeftSideMenu->getChildByID("delete-button");
         if (!DeleteButton) {
         } else {
             LeftSideMenu->removeChild(DeleteButton);
@@ -24,20 +23,12 @@ class $modify(LevelInfoLayer) {
         if (!RightSideMenu) {
             return false;
         }
-
         auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
         if (!DeleteButton2) {
-        } else {
             DeleteButton2->setID("normal-delete-button"); //Both delete buttons have the same name
-            auto DeleteButton3 = RightSideMenu->getChildByID("delete-button");
-            if (!DeleteButton3) {
-                DeleteButton2->setID("delete-button");
-                RightSideMenu->updateLayout();
-            } else {
-                RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
-                DeleteButton2->setID("delete-button"); //Rename the top right delete button back
-                RightSideMenu->updateLayout();
-            }
+            RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
+            DeleteButton2->setID("delete-button"); //Rename the top right delete button back
+            RightSideMenu->updateLayout();
         }
 	}
 };
