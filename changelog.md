@@ -1,7 +1,6 @@
 # v1.0.4
 
  * Updated mod for use for Geode v3.0.0
- * Setting to remove the mod button removed, it now has to be deleted by default
 
 # v1.0.3
 
