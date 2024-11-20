@@ -1,3 +1,7 @@
+# v1.0.5
+
+ * Updated mod for use for Geode v4.0.0
+
 # v1.0.4
 
  * Updated mod for use for Geode v3.0.0
