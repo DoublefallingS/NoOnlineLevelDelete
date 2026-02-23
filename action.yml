@@ -31,7 +31,7 @@ inputs:
     required: false
     default: false
   target:
-    description: Geode target to build for. Can be either "Win64", "MacOS", "Android32" or "Android64".
+    description: Geode target to build for. Can be either "Win64", "MacOS", "iOS", "Android32" or "Android64".
     required: false
     default: ""
   bindings:
@@ -46,10 +46,14 @@ inputs:
     description: The android min SDK version to target. Defaults to 23
     required: false
     default: 23
-  ccache-variant:
-    description: The ccache variant to use (empty, ccache or sccache). Defaults to sccache
+  android-ndk-version:
+    description: Version to the Android NDK to use. Defaults to latest version in the runner.
     required: false
-    default: sccache
+    default: ""
+  ccache-variant:
+    description: The ccache variant to use (empty, ccache or sccache). Defaults to sccache on Windows and Android, empty otherwise
+    required: false
+    default: default
   use-cpm-cache:
     description: Whether to cache CPM sources. Defaults to true
     required: false
@@ -58,10 +62,22 @@ inputs:
     description: Whether to export PDB files for Windows builds. Defaults to false
     required: false
     default: false
+  export-debug:
+    description: Whether to export debug files for builds (.pdb for Windows, .dbg for Android, .dSYM for MacOS). Defaults to false
+    required: false
+    default: false
   use-lto:
     description: Whether to use LTO (Link Time Optimization) via the CMAKE_INTERPROCEDURAL_OPTIMIZATION flag, improving build size. Defaults to true
     required: false
     default: true
+  bundle-pdb:
+    description: Whether to bundle PDB files into the .geode package. Requires SDK v4.2.0 and CLI v3.3.0 at minimum. Defaults to false
+    required: false
+    default: false
+  export-symbols:
+    description: Whether to export Breakpad symbols for Android builds. Defaults to false
+    required: false
+    default: false
 
 outputs:
   build-output:
@@ -76,6 +92,7 @@ runs:
       shell: bash
       run: |
         DEFAULT_TARGET=Win64
+        DEFAULT_CCACHE=sccache
         if [ "$RUNNER_OS" = "Linux" ]; then
           ID=linux
           DEFAULT_TARGET=Android64
@@ -85,6 +102,12 @@ runs:
         elif [ "$RUNNER_OS" = "macOS" ]; then
           ID=mac
           DEFAULT_TARGET=MacOS
+          DEFAULT_CCACHE=
+        fi
+
+        CCACHE_VARIANT=${{ inputs.ccache-variant }}
+        if [ "$CCACHE_VARIANT" = "default" ]; then
+          CCACHE_VARIANT=$DEFAULT_CCACHE
         fi
 
         TARGET=${{ inputs.target }}
@@ -100,11 +123,14 @@ runs:
           OUTPUT_ID=win
         elif [ "$TARGET" = "MacOS" ]; then
           OUTPUT_ID=mac
+        elif [ "$TARGET" = "iOS" ]; then
+          OUTPUT_ID=ios
         fi
 
         echo "id=$ID" >> $GITHUB_OUTPUT
         echo "target=$TARGET" >> $GITHUB_OUTPUT
         echo "target_id=$OUTPUT_ID" >> $GITHUB_OUTPUT
+        echo "ccache_variant=$CCACHE_VARIANT" >> $GITHUB_OUTPUT
 
     # https://github.com/mozilla/sccache/issues/2090
     - name: Download custom sccache
@@ -116,32 +142,32 @@ runs:
         tarBall: false
         zipBall: false
         out-file-path: "epic-sccache"
-      if: steps.platform.outputs.id == 'mac' && inputs.ccache-variant != ''
+      if: steps.platform.outputs.id == 'mac' && steps.platform.outputs.ccache_variant != ''
 
     - name: Setup custom sccache
-      if: steps.platform.outputs.id == 'mac' && inputs.ccache-variant != ''
+      if: steps.platform.outputs.id == 'mac' && steps.platform.outputs.ccache_variant != ''
       shell: bash
       run: |
         7z x "epic-sccache/sccache-*-x86_64-apple-darwin.zip" -o"epic-sccache"
         echo "$GITHUB_WORKSPACE/epic-sccache" >> $GITHUB_PATH
         chmod +x "epic-sccache/sccache"
+        echo "SCCACHE_CACHE_MULTIARCH=1" >> $GITHUB_ENV
 
-    # https://github.com/hendrikmuhs/ccache-action/pull/182
     - name: Setup sccache
-      uses: chirag-droid/ccache-action@main
+      uses: hendrikmuhs/ccache-action@v1
       with:
-        variant: ${{ inputs.ccache-variant }}
+        variant: ${{ steps.platform.outputs.ccache_variant }}
         key: ${{ steps.platform.outputs.target_id }}-v1
-      if: inputs.ccache-variant != ''
+      if: steps.platform.outputs.ccache_variant != ''
 
     - name: Setup CPM Cache
+      if: inputs.use-cpm-cache == 'true'
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/cpm-cache
         key: cpm-${{ steps.platform.outputs.target_id }}-v1-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
           cpm-${{ steps.platform.outputs.target_id }}-v1-
-      if: inputs.use-cpm-cache
 
     - name: Install Ninja
       shell: bash
@@ -149,23 +175,29 @@ runs:
         curl -L https://github.com/ninja-build/ninja/releases/latest/download/ninja-${{ steps.platform.outputs.id }}.zip -o ninja.zip
         7z x ninja.zip -o"$GITHUB_WORKSPACE/ninja"
         echo "$GITHUB_WORKSPACE/ninja" >> $GITHUB_PATH
-    
-    - name: Fix Ubuntu weirdness
-      shell: bash
-      run: |
-        sudo apt install ninja-build &&
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test &&
-        sudo apt-get update &&
-        sudo apt-get install --only-upgrade libstdc++6
-      if: steps.platform.outputs.id == 'linux' && (steps.platform.outputs.target_id == 'android32' || steps.platform.outputs.target_id == 'android64')
 
-    - name: Update LLVM (Windows)
-      if: steps.platform.outputs.id == 'win'
+    - name: Install dump_syms
+      if: inputs.export-symbols == 'true' && steps.platform.outputs.id == 'linux' && (steps.platform.outputs.target_id == 'android32' || steps.platform.outputs.target_id == 'android64')
       shell: bash
       run: |
-        curl -L https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/LLVM-17.0.6-win64.exe -o llvm-inst.exe
-        7z x llvm-inst.exe -ollvm bin/clang.exe bin/clang++.exe bin/lld-link.exe bin/llvm-rc.exe bin/*.dll lib/clang/*/include/*
-        echo "$GITHUB_WORKSPACE/llvm/bin" >> $GITHUB_PATH
+        curl -L https://github.com/mozilla/dump_syms/releases/latest/download/dump_syms-x86_64-unknown-linux-gnu.tar.xz -o dump_syms.tar.xz
+        xz -d dump_syms.tar.xz
+        tar -xf dump_syms.tar
+        echo "$GITHUB_WORKSPACE/dump_syms-x86_64-unknown-linux-gnu" >> $GITHUB_PATH
+    
+    # - name: Fix Ubuntu weirdness
+    #   shell: bash
+    #   run: |
+    #     sudo apt install ninja-build &&
+    #     sudo add-apt-repository ppa:ubuntu-toolchain-r/test &&
+    #     sudo apt-get update &&
+    #     sudo apt-get install --only-upgrade libstdc++6
+    #   if: steps.platform.outputs.id == 'linux' && (steps.platform.outputs.target_id == 'android32' || steps.platform.outputs.target_id == 'android64')
+
+    # - name: Update LLVM (Windows)
+    #       if: steps.platform.outputs.id == 'win'
+    #             shell: bash
+    #                   run: choco upgrade llvm
 
     # - name: Install LLVM (MacOS)
     #   shell: bash
@@ -187,26 +219,10 @@ runs:
       shell: bash
       run: echo "GEODE_BINDINGS_REPO_PATH=$GITHUB_WORKSPACE/bindings-repo" >> $GITHUB_ENV
 
-    - name: Download CLI
-      uses: robinraju/release-downloader@v1.9
-      with:
-        repository: geode-sdk/cli
-        latest: ${{ inputs.cli == 'latest' }}
-        tag: ${{ inputs.cli != 'latest' && inputs.cli || '' }}
-        fileName: "*-${{ steps.platform.outputs.id }}.zip"
-        tarBall: false
-        zipBall: false
-        out-file-path: "cli"
-
     - name: Setup CLI
-      shell: bash
-      run: |
-        7z x "cli/*-${{ steps.platform.outputs.id }}.zip" -ocli
-        echo "${{ github.workspace }}/cli" >> $GITHUB_PATH
-
-        if [ ${{ steps.platform.outputs.id }} != "win" ]; then
-          chmod +x "cli/geode"
-        fi
+      uses: geode-sdk/cli/.github/actions/setup@main
+      with:
+        version: ${{ inputs.cli }}
 
     - name: Setup Geode SDK
       shell: bash
@@ -231,7 +247,7 @@ runs:
           geode sdk update stable
           geode sdk install-binaries --platform ${{ steps.platform.outputs.target_id }}
         elif [ "${{ inputs.sdk }}" == "given" ]; then
-          export MOD_JSON_PATH=$(find . -name "mod.json" -not -path "./geode-sdk-clone/*" -print -quit)
+          export MOD_JSON_PATH=$(find . -name "mod.json" -not -path "./geode-sdk-clone/*" -print | sort -r | head -n 1)
           export TARGET_GEODE_VERSION=$(jq -r '.geode' $MOD_JSON_PATH)
           echo "Updating to version $TARGET_GEODE_VERSION from $MOD_JSON_PATH"
           geode sdk update "$TARGET_GEODE_VERSION"
@@ -250,25 +266,47 @@ runs:
       run: |
         mkdir -p $HOME/.cache
 
+        NDK_PATH="/usr/local/lib/android/sdk/ndk/${{ inputs.android-ndk-version }}"
+        if [ "${{ inputs.android-ndk-version }}" = "" ]; then
+          NDK_PATH="$ANDROID_NDK_LATEST_HOME"
+        fi
+
         cd "${{ inputs.path }}"
         CMAKE_EXTRA_ARGS=""
         if [ ${{ steps.platform.outputs.target_id }} = "mac" ]; then
-          CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DGEODE_DISABLE_PRECOMPILED_HEADERS=OFF -DCMAKE_AR='/usr/bin/ar' -DCMAKE_RANLIB='/usr/bin/ranlib'"
+          CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DGEODE_DISABLE_PRECOMPILED_HEADERS=OFF -DCMAKE_AR='/usr/bin/ar' -DCMAKE_RANLIB='/usr/bin/ranlib'"
         elif [ ${{ steps.platform.outputs.target_id }} = "android32" ]; then
-          CMAKE_EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_shared -DANDROID_ABI=armeabi-v7a -DANDROID_PLATFORM=android-${{ inputs.android-min-sdk }}"
+          CMAKE_EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_shared -DANDROID_ABI=armeabi-v7a -DANDROID_PLATFORM=android-${{ inputs.android-min-sdk }}"
         elif [ ${{ steps.platform.outputs.target_id }} = "android64" ]; then
-          CMAKE_EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_shared -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-${{ inputs.android-min-sdk }}"
+          CMAKE_EXTRA_ARGS="-DCMAKE_TOOLCHAIN_FILE=$NDK_PATH/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_shared -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-${{ inputs.android-min-sdk }}"
+        elif [ ${{ steps.platform.outputs.target_id }} = "ios" ]; then
+          CMAKE_EXTRA_ARGS="-DCMAKE_SYSTEM_NAME=iOS -DGEODE_TARGET_PLATFORM=iOS -DGEODE_DISABLE_PRECOMPILED_HEADERS=OFF"
         fi
         if [ "${{ inputs.use-lto }}" = "true" ]; then
           CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"
         fi
+        if [ "${{ inputs.bundle-pdb }}" = "true" ] && [ ${{ steps.platform.outputs.id }} = "win" ]; then
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DGEODE_BUNDLE_PDB=ON"
+        fi
+        if [ -n "${{ steps.platform.outputs.ccache_variant }}" ]; then
+          CCACHE_PATH="$(which "${{ steps.platform.outputs.ccache_variant }}")"
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE_PATH} -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE_PATH}"
+        fi
         cmake -B build -DCMAKE_BUILD_TYPE=${{ inputs.build-config }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DGEODE_CODEGEN_CMAKE_ARGS="-DCMAKE_C_COMPILER=clang;-DCMAKE_CXX_COMPILER=clang++;-G Ninja" -G Ninja $CMAKE_EXTRA_ARGS -DGEODE_DONT_INSTALL_MODS=ON -DGEODE_TARGET_PLATFORM=${{ steps.platform.outputs.target }} ${{ inputs.configure-args }}
-        cmake --build build --config ${{ inputs.build-config }} ${{ inputs.build-args }}
+        cmake --build build --config ${{ inputs.build-config }} ${{ inputs.build-args }} --parallel
 
         mkdir "${{ github.workspace }}/output"
 
         for file in $(find ./build -name *.geode); do
           cp $file "${{ github.workspace }}/output"
+          if [ ${{ steps.platform.outputs.id }} = "linux" ] && [ "${{ inputs.export-symbols }}" = "true" ]; then
+            if [ ${{ steps.platform.outputs.target_id }} = "android32" ] || [ ${{ steps.platform.outputs.target_id }} = "android64" ]; then
+              SO_FILE_NAME="$(basename $file .geode).${{ steps.platform.outputs.target_id }}.so"
+              if [ -f "./build/$SO_FILE_NAME" ]; then
+                dump_syms ./build/$SO_FILE_NAME -o "${{ github.workspace }}/output/$SO_FILE_NAME.sym"
+              fi
+            fi
+          fi
         done
 
         if [ ${{ steps.platform.outputs.id }} = "win" ]; then
@@ -277,6 +315,18 @@ runs:
               cp $file "${{ github.workspace }}/output"
             done
           fi
+        fi
+
+        if [ "${{ inputs.export-debug }}" = "true" ]; then
+          for file in $(find ./build -name *.pdb); do
+            cp $file "${{ github.workspace }}/output"
+          done
+          for file in $(find ./build -name *.dbg); do
+            cp $file "${{ github.workspace }}/output"
+          done
+          for dir in $(find ./build -name *.dSYM); do
+            cp -R $dir "${{ github.workspace }}/output"
+          done
         fi
 
         OUTPUT_DIR="${{ github.workspace }}/output"
@@ -290,10 +340,13 @@ runs:
         echo "output=$OUTPUT_DIR" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts
-      if: ${{ inputs.combine }}
+      if: ${{ inputs.combine == 'true' }}
       uses: actions/upload-artifact@v4
       with:
         name: "geode-build-${{ steps.platform.outputs.target_id }}"
         path: |
           ${{ steps.build.outputs.output }}/*.geode
           ${{ steps.build.outputs.output }}/*.pdb
+          ${{ steps.build.outputs.output }}/*.sym
+          ${{ steps.build.outputs.output }}/*.dbg
+          ${{ steps.build.outputs.output }}/*.dSYM
