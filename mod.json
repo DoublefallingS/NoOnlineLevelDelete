@@ -1,16 +1,19 @@
 {
-	"geode": "4.0.0",
+	"geode": "5.0.0",
 	"gd": {
-		"win": "2.2074",
-		"android": "2.2074",
-		"mac": "2.2074"
+		"win": "2.208",
+		"android": "2.208",
+		"mac": "2.208"
 	},
-	"version": "v1.0.5",
+	"version": "v1.0.6",
 	"id": "doublefallings.noonlineleveldelete",
 	"name": "NoOnlineLevelDelete",
 	"developer": "DoublefallingS",
 	"description": "Hides the button to delete your online levels to prevent accidents.",
 	"repository": "https://github.com/DoublefallingS/NoOnlineLevelDelete",
+	"dependencies": {
+        "geode.node-ids": ">=v1.23.0"
+    },
 	"settings": {
         "moderator-button-disabled": {
             "name": "Mod Button Disabled",
