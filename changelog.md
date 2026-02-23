@@ -1,7 +1,6 @@
 # v1.0.6
 
  * Updated mod for use for Geode v5.0.0
- * Added iOS support
  * Dependency for Node IDs is now defined (went unnoticed for over a year, sorry about that)
 
 # v1.0.5
