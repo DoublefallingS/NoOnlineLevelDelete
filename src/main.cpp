@@ -25,7 +25,7 @@ class $modify(LevelInfoLayer) {
         }
         auto DeleteButton2 = RightSideMenu->getChildByID("delete-button");
         auto value = Mod::get()->getSettingValue<bool>("moderator-button-disabled");
-        if (value == true) {
+        if (value && DeleteButton2 != nullptr) {
             DeleteButton2->setID("normal-delete-button"); //Both delete buttons have the same name
             RightSideMenu->removeChildByID("delete-button"); //Delete the correct button
             DeleteButton2->setID("delete-button"); //Rename the top right delete button back
