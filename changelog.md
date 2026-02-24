@@ -1,3 +1,8 @@
+# v1.0.7
+
+ * Fixed the mod causing crashes upon entering a current Daily, Weekly, or Event level (top-right delete button does not exist on those menus)
+ * Updated description
+
 # v1.0.6
 
  * Updated mod for use for Geode v5.0.0
